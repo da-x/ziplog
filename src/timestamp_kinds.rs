@@ -40,12 +40,6 @@ impl TimestampKind {
 
 pub fn get_timestamp_kinds() -> Vec<TimestampKind> {
     vec![
-        // 01:21:27
-        TimestampKind::new(r"^(\d+:\d+:\d+)", |tk, s, caps| {
-            let _ = write!(s, "{}.{}.{} {}", tk.year, tk.month, tk.day, caps.get(1).unwrap().as_str());
-            Utc.datetime_from_str(s, "%Y.%m.%d %H:%M:%S")
-        }),
-
         // Apr 6 17:13:40
         TimestampKind::new(r"^(\w{3} +\d+ +\d+:\d+:\d+)", |tk, s, caps| {
             let _ = write!(s, "{} {}", tk.year, caps.get(1).unwrap().as_str());
@@ -99,11 +93,12 @@ pub fn get_timestamp_kinds() -> Vec<TimestampKind> {
         }),
 
         // for strace logs
-        // 16255 15:08:52.554223
-        TimestampKind::new(r"\d+ (\d{2}:\d{2}:\d{2}).(\d{6})", |tk, s, caps| {
+        // 01:21:27
+        // 01:21:27.554223
+        TimestampKind::new(r"\b(\d{2}:\d{2}:\d{2})(?:\.(\d{6}))?", |tk, s, caps| {
             let _ = write!(s, "{}.{}.{} {}", tk.year, tk.month, tk.day, caps.get(1).unwrap().as_str());
             Utc.datetime_from_str(s, "%Y.%m.%d %H:%M:%S")
-                .map(|x| x + Duration::microseconds(caps.get(2).unwrap().as_str().parse().unwrap()))
+                .map(|x| x + Duration::microseconds(caps.get(2).map(|x|x.as_str().parse().unwrap()).unwrap_or(0)))
         }),
     ]
 }
