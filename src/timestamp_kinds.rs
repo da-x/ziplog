@@ -60,38 +60,24 @@ pub fn get_timestamp_kinds() -> Vec<TimestampKind> {
             DateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f%z").map(|x|From::from(x))
         }),
 
-        // 2018-04-06 17:13:40,955
-        // 2018-04-23 04:48:11,811|
-        TimestampKind::new(r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),(\d{3})[| ]?", |_tk, _, caps| {
+        // Same as above, but with milliseconds
+        TimestampKind::new(r"^(?:\d+\s+|\[|^)(\d{4}[/\-]\d{2}[/\-]\d{2}[ T]\d{2}:\d{2}:\d{2})(?:[.,](\d{3}))?", |_tk, _, caps| {
+            let milliseconds = caps.get(2).map(|x|x.as_str().parse().unwrap()).unwrap_or(0);
             Utc.datetime_from_str(caps.get(1).unwrap().as_str(), "%Y-%m-%d %H:%M:%S")
-                .map(|x|x + Duration::milliseconds(caps.get(2).unwrap().as_str().parse().unwrap()))
-                .map(|x|From::from(x))
+                .map(|x| x + Duration::milliseconds(milliseconds))
         }),
 
         // 2018-04-06 17:13:40
         // [2018-04-06 17:13:40.955356
-        TimestampKind::new(r"^\[?(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?:\.(\d{6}))?", |_tk, _, caps| {
+        // 1234 2018/04/06 17:13:40.955356
+        // 1234 2018/04/06 17:13:40,955356
+        // ...
+        TimestampKind::new(r"^(?:\d+\s+|\[|^)(\d{4}[/\-]\d{2}[/\-]\d{2}[ T]\d{2}:\d{2}:\d{2})(?:[.,](\d{6}))?", |_tk, _, caps| {
             let microseconds = caps.get(2).map(|x|x.as_str().parse().unwrap()).unwrap_or(0);
             Utc.datetime_from_str(caps.get(1).unwrap().as_str(), "%Y-%m-%d %H:%M:%S")
                 .map(|x| x + Duration::microseconds(microseconds))
         }),
-
-        // 2018/04/06 17:13:40
-        // [2018/04/06 17:13:40.955356
-        TimestampKind::new(r"^\[?(\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2})(?:\.(\d{6}))?", |_tk, _, caps| {
-            let microseconds = caps.get(2).map(|x|x.as_str().parse().unwrap()).unwrap_or(0);
-            Utc.datetime_from_str(caps.get(1).unwrap().as_str(), "%Y/%m/%d %H:%M:%S")
-                .map(|x| x + Duration::microseconds(microseconds))
-        }),
-
-        // for sshd logs
-        // 1564 2020-01-15 14:54:14.558
-        TimestampKind::new(r"\d+ (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).(\d{3})", |_tk, _, caps| {
-            Utc.datetime_from_str(caps.get(1).unwrap().as_str(), "%Y-%m-%d %H:%M:%S")
-                .map(|x|x + Duration::milliseconds(caps.get(2).unwrap().as_str().parse().unwrap()))
-                .map(|x|From::from(x))
-        }),
-
+   
         // for strace logs
         // 01:21:27
         // 01:21:27.554223

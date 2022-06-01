@@ -83,7 +83,7 @@ fn main() -> std::io::Result<()> {
     enum IntervalType {
         Seconds,
         Milliseconds,
-    };
+    }
 
     let interval = match opt.interval.as_ref().map(|x| x.as_str()) {
         Some("s") => Some(IntervalType::Seconds),
